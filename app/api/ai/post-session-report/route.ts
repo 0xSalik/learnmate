@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   if (process.env.RESEND_API_KEY && process.env.REPORT_TO_EMAIL) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from: "Pahechan <reports@pahechan.app>",
+      from: "LearnMate <reports@learnmate.app>",
       to: process.env.REPORT_TO_EMAIL,
       subject: `Session report: ${childName}`,
       html: `<pre>${JSON.stringify(report, null, 2)}</pre>`,

@@ -61,7 +61,7 @@ export default function Home() {
     <div className="relative min-h-screen overflow-hidden bg-surface-warm">
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-4 py-14 md:px-6">
         <h1 className="max-w-3xl text-4xl font-semibold leading-tight text-text-primary md:text-5xl">
-          Pahechan: near-peer learning that builds understanding, not shortcuts.
+          LearnMate: near-peer learning that builds understanding, not shortcuts.
         </h1>
         <p className="mt-4 max-w-2xl text-text-secondary">
           Built for working parents, middle/high school students, university learners, and college freelancers who want dignified, outcome-tracked learning support.

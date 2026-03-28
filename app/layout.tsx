@@ -14,7 +14,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Pahechan",
+  title: "LearnMate",
   description: "Near-peer learning marketplace",
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${dmSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-(--surface-warm) text-(--text-primary)">
+      <body className="min-h-full bg-surface-warm text-text-primary">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -43,7 +43,7 @@ export function Navbar() {
         <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface-warm/95 backdrop-blur">
             <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
                 <Link href="/" className="text-xl font-semibold tracking-tight text-text-primary">
-                    Pahechan
+                    LearnMate
                 </Link>
                 <div className="hidden items-center gap-5 md:flex">
                     {links.map((item) => (

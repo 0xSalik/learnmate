@@ -99,32 +99,59 @@ export const upsertForCurrentFreelancer = mutation({
     let updated = 0;
     let inserted = 0;
 
-    for (const item of items) {
-      const match = existing.find((e: any) => e.url === item.url);
+    const normalizeCategory = (
+      value: string
+    ): "gig" | "internship" | "hackathon" | "scholarship" | "competition" | "volunteer" => {
+      if (
+        value === "internship" ||
+        value === "hackathon" ||
+        value === "scholarship" ||
+        value === "competition" ||
+        value === "volunteer"
+      ) {
+        return value;
+      }
+      return "gig";
+    };
+
+    for (const item of items.slice(0, 30)) {
+      const safeUrl = String(item.url || "").trim() || `https://example.com/opportunity/${Date.now()}`;
+      const safeTitle = String(item.title || "").trim() || "Opportunity";
+      const safeDescription = String(item.description || "");
+      const safeSummary = String(item.aiSummary || "Relevant opportunity.");
+      const safeCategory = normalizeCategory(item.category);
+      const safeDeadline = item.deadline ? String(item.deadline) : undefined;
+      const safePrize = item.prize ? String(item.prize) : undefined;
+      const safeScore = Number.isFinite(item.relevanceScore) ? item.relevanceScore : 0.7;
+      const safeExpiresAt = Number.isFinite(item.expiresAt)
+        ? item.expiresAt
+        : Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+      const match = existing.find((e: any) => e.url === safeUrl);
       if (match) {
         await ctx.db.patch(match._id, {
-          title: item.title,
-          description: item.description,
-          aiSummary: item.aiSummary,
-          category: item.category,
-          deadline: item.deadline,
-          prize: item.prize,
-          relevanceScore: item.relevanceScore,
-          expiresAt: item.expiresAt,
+          title: safeTitle,
+          description: safeDescription,
+          aiSummary: safeSummary,
+          category: safeCategory,
+          deadline: safeDeadline,
+          prize: safePrize,
+          relevanceScore: safeScore,
+          expiresAt: safeExpiresAt,
         });
         updated += 1;
       } else {
         await ctx.db.insert("opportunities", {
           freelancerId: user._id,
-          title: item.title,
-          url: item.url,
-          description: item.description,
-          aiSummary: item.aiSummary,
-          category: item.category,
-          deadline: item.deadline,
-          prize: item.prize,
-          relevanceScore: item.relevanceScore,
-          expiresAt: item.expiresAt,
+          title: safeTitle,
+          url: safeUrl,
+          description: safeDescription,
+          aiSummary: safeSummary,
+          category: safeCategory,
+          deadline: safeDeadline,
+          prize: safePrize,
+          relevanceScore: safeScore,
+          expiresAt: safeExpiresAt,
           createdAt: Date.now(),
         });
         inserted += 1;

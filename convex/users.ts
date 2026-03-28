@@ -475,7 +475,7 @@ export const seedDemoData = mutation({
     };
 
     const demoParentId = await ensureUser("demo-parent", {
-      email: "parent.demo@pahechan.dev",
+      email: "parent.demo@learnmate.dev",
       name: "Priya Sharma",
       role: "parent",
       city: "Mumbai",
@@ -488,7 +488,7 @@ export const seedDemoData = mutation({
     });
 
     const demoSchoolStudentId = await ensureUser("demo-school-student", {
-      email: "school.student.demo@pahechan.dev",
+      email: "school.student.demo@learnmate.dev",
       name: "Aarav Mehta",
       role: "school_student",
       city: "Mumbai",
@@ -501,7 +501,7 @@ export const seedDemoData = mutation({
     });
 
     const demoUniversityStudentId = await ensureUser("demo-university-student", {
-      email: "university.student.demo@pahechan.dev",
+      email: "university.student.demo@learnmate.dev",
       name: "Sneha Iyer",
       role: "university_student",
       city: "Pune",
@@ -515,7 +515,7 @@ export const seedDemoData = mutation({
     });
 
     const demoFreelancerId = await ensureUser("demo-freelancer", {
-      email: "freelancer.demo@pahechan.dev",
+      email: "freelancer.demo@learnmate.dev",
       name: "Rohan Verma",
       role: "freelancer",
       city: "Mumbai",

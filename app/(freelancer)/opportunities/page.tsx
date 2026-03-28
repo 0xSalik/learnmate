@@ -16,6 +16,20 @@ export default function OpportunitiesPage() {
     ) ?? [];
     const upsertForCurrentFreelancer = useMutation(api.opportunities.upsertForCurrentFreelancer);
 
+    const normalizeCategory = (value: unknown): "gig" | "internship" | "hackathon" | "scholarship" | "competition" | "volunteer" => {
+        const v = String(value ?? "").toLowerCase();
+        if (v === "internship" || v === "hackathon" || v === "scholarship" || v === "competition" || v === "volunteer") {
+            return v;
+        }
+        return "gig";
+    };
+
+    const asOptionalString = (value: unknown): string | undefined => {
+        if (value === null || value === undefined) return undefined;
+        const text = String(value).trim();
+        return text.length ? text : undefined;
+    };
+
     const refreshFromExa = async () => {
         if (!me || me.role !== "freelancer") {
             setStatus("Sign in as freelancer to refresh opportunities.");
@@ -36,21 +50,27 @@ export default function OpportunitiesPage() {
             });
             const data = await res.json();
 
+            const items = (data.results ?? [])
+                .map((item: any, idx: number) => ({
+                    title: asOptionalString(item.title) ?? `Opportunity ${idx + 1}`,
+                    url: asOptionalString(item.url) ?? `https://example.com/opportunity/${Date.now()}-${idx}`,
+                    description: asOptionalString(item.description) ?? "",
+                    aiSummary: asOptionalString(item.aiSummary) ?? "Relevant opportunity.",
+                    category: normalizeCategory(item.category),
+                    deadline: asOptionalString(item.deadline),
+                    prize: asOptionalString(item.prize),
+                    relevanceScore: Number.isFinite(Number(item.relevanceScore)) ? Number(item.relevanceScore) : 0.7,
+                    expiresAt: Number.isFinite(Number(item.expiresAt))
+                        ? Number(item.expiresAt)
+                        : Date.now() + 7 * 24 * 60 * 60 * 1000,
+                }))
+                .slice(0, 20);
+
             await upsertForCurrentFreelancer({
-                items: (data.results ?? []).map((item: any) => ({
-                    title: item.title,
-                    url: item.url,
-                    description: item.description ?? "",
-                    aiSummary: item.aiSummary ?? "Relevant opportunity.",
-                    category: item.category ?? "gig",
-                    deadline: item.deadline,
-                    prize: item.prize,
-                    relevanceScore: Number(item.relevanceScore ?? 0.7),
-                    expiresAt: Number(item.expiresAt ?? Date.now() + 7 * 24 * 60 * 60 * 1000),
-                })),
+                items,
             });
 
-            setStatus(`Refreshed ${Number(data.count ?? 0)} opportunities from Exa.`);
+            setStatus(`Refreshed ${items.length} opportunities from Exa.`);
         } catch {
             setStatus("Could not refresh opportunities right now.");
         } finally {

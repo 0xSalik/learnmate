@@ -1,6 +1,6 @@
-# Pahechan
+# LearnMate
 
-Pahechan is a near-peer learning marketplace focused on measurable learning outcomes for three actor groups:
+LearnMate is a near-peer learning marketplace focused on measurable learning outcomes for three actor groups:
 
 - Parents seeking trusted project and concept-learning support for children.
 - Students (middle school, high school, university) seeking concept clarity.
@@ -16,7 +16,7 @@ Most tutoring and assignment-help marketplaces optimize for quick output, not du
 
 ### Solution
 
-Pahechan combines:
+LearnMate combines:
 
 - Role-based onboarding and identity-linked profiles.
 - Concept-first project and request flow.
@@ -228,7 +228,7 @@ Then set Convex deployment env vars (including `CLERK_JWT_ISSUER_DOMAIN`, OpenRo
 
 ## 9) Non-Technical Submission Summary
 
-Pahechan is designed to reduce learning inequality by improving instructional quality and accountability. The platform focuses on understanding over shortcuts and provides transparent handoff, profile evolution, and role-specific workflows for parents, students, and freelancers.
+LearnMate is designed to reduce learning inequality by improving instructional quality and accountability. The platform focuses on understanding over shortcuts and provides transparent handoff, profile evolution, and role-specific workflows for parents, students, and freelancers.
 
 ## 10) License and Submission Notes
 
