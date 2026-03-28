@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { ProjectCard } from "@/components/project/ProjectCard";
@@ -52,6 +53,27 @@ export default function StudentDashboardPage() {
     return (
         <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-text-primary">Student Dashboard</h1>
+
+            <section className="rounded-2xl border border-border-subtle bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold text-text-primary">AI Features</h2>
+                    <span className="text-xs text-text-secondary">OpenRouter-enabled</span>
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    <Link href="/post-crash-course" className="rounded-xl border border-border-subtle bg-surface-card p-3">
+                        <p className="font-medium text-text-primary">AI Intent Guardrail</p>
+                        <p className="mt-1 text-sm text-text-secondary">Classify request and auto-rephrase assignment-heavy asks.</p>
+                    </Link>
+                    <Link href="/browse" className="rounded-xl border border-border-subtle bg-surface-card p-3">
+                        <p className="font-medium text-text-primary">AI-Matched Project Support</p>
+                        <p className="mt-1 text-sm text-text-secondary">Browse live projects and place your bids with updated status.</p>
+                    </Link>
+                    <Link href="/session/demo/proof-of-learning" className="rounded-xl border border-border-subtle bg-surface-card p-3">
+                        <p className="font-medium text-text-primary">Proof-of-Learning Quiz</p>
+                        <p className="mt-1 text-sm text-text-secondary">Try the quiz flow to validate learning outcomes.</p>
+                    </Link>
+                </div>
+            </section>
 
             <section className="rounded-2xl border border-border-subtle bg-white p-4">
                 <div className="flex items-center justify-between">

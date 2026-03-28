@@ -67,6 +67,27 @@ export default function ParentDashboardPage() {
                 </article>
             </section>
 
+            <section className="rounded-2xl border border-border-subtle bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold text-text-primary">AI Features</h2>
+                    <span className="text-xs text-text-secondary">OpenRouter-powered</span>
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    <Link href="/post-project" className="rounded-xl border border-border-subtle bg-surface-card p-3">
+                        <p className="font-medium text-text-primary">AI Brief Extract + Price</p>
+                        <p className="mt-1 text-sm text-text-secondary">Upload/simulate brief parsing and get AI budget suggestions.</p>
+                    </Link>
+                    <Link href="/browse" className="rounded-xl border border-border-subtle bg-surface-card p-3">
+                        <p className="font-medium text-text-primary">Live Bids + Acceptance</p>
+                        <p className="mt-1 text-sm text-text-secondary">Review proposals, accept bid, and complete delivered work.</p>
+                    </Link>
+                    <Link href="/session/demo/proof-of-learning" className="rounded-xl border border-border-subtle bg-surface-card p-3">
+                        <p className="font-medium text-text-primary">AI Quiz Demo</p>
+                        <p className="mt-1 text-sm text-text-secondary">Proof-of-learning quiz flow generated from session context.</p>
+                    </Link>
+                </div>
+            </section>
+
             <section className="grid gap-4 md:grid-cols-2">
                 {projects.length ? (
                     projects.map((project) => (
