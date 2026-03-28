@@ -11,8 +11,8 @@ export default function OpportunitiesPage() {
 
     const me = useQuery(api.users.getCurrentUser);
     const opportunities = useQuery(
-        api.opportunities.byCurrentFreelancer,
-        me?.role === "freelancer" ? {} : "skip"
+        api.opportunities.byFreelancer,
+        me?.role === "freelancer" ? { freelancerId: me._id } : "skip"
     ) ?? [];
     const upsertForCurrentFreelancer = useMutation(api.opportunities.upsertForCurrentFreelancer);
 

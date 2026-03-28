@@ -10,8 +10,8 @@ export default function FreelancerDashboardPage() {
     const me = useQuery(api.users.getCurrentUser);
     const openProjects = useQuery(api.projects.listOpen) ?? [];
     const opportunities = useQuery(
-        api.opportunities.byCurrentFreelancer,
-        me?.role === "freelancer" ? {} : "skip"
+        api.opportunities.byFreelancer,
+        me?.role === "freelancer" ? { freelancerId: me._id } : "skip"
     ) ?? [];
 
     return (

@@ -89,7 +89,6 @@ export default function FreelancerOnboardingPage() {
                 {step === 4 && (
                     <div className="space-y-2">
                         <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Short bio" className="h-24 w-full rounded-xl border border-border-subtle px-3 py-2" />
-                        <input value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value || 0))} type="number" min={100} className="w-full rounded-xl border border-border-subtle px-3 py-2" />
                     </div>
                 )}
                 {step === 5 && <p className="text-sm text-text-secondary">Finish to save your account-linked freelancer profile.</p>}

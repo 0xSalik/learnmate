@@ -4,6 +4,7 @@ import { v } from "convex/values";
 const getAuthedUser = async (ctx: any) => {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthorized");
+  if (!identity.subject) throw new Error("Unauthorized");
 
   const user = await ctx.db
     .query("users")
@@ -18,6 +19,7 @@ const getAuthedUserOrNull = async (ctx: any) => {
   try {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
+    if (!identity.subject) return null;
 
     const user = await ctx.db
       .query("users")
