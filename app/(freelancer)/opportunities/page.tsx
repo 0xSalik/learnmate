@@ -10,7 +10,10 @@ export default function OpportunitiesPage() {
     const [refreshing, setRefreshing] = useState(false);
 
     const me = useQuery(api.users.getCurrentUser);
-    const opportunities = useQuery(api.opportunities.byCurrentFreelancer) ?? [];
+    const opportunities = useQuery(
+        api.opportunities.byCurrentFreelancer,
+        me?.role === "freelancer" ? {} : "skip"
+    ) ?? [];
     const upsertForCurrentFreelancer = useMutation(api.opportunities.upsertForCurrentFreelancer);
 
     const refreshFromExa = async () => {

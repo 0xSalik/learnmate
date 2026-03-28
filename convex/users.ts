@@ -58,6 +58,13 @@ export const getPostAuthDestination = query({
 
     if (!user) return "/onboarding/role";
 
+    // New auth records are initially created with a default role. Until the
+    // user explicitly selects their role on onboarding, keep routing to role
+    // selection instead of assuming student onboarding.
+    if (user.role === "school_student" && !user.educationStage) {
+      return "/onboarding/role";
+    }
+
     if (user.role === "parent") {
       const child = await ctx.db
         .query("children")

@@ -7,8 +7,12 @@ import { OpportunityFeedCard } from "@/components/freelancer/OpportunityFeedCard
 import { ProjectCard } from "@/components/project/ProjectCard";
 
 export default function FreelancerDashboardPage() {
+    const me = useQuery(api.users.getCurrentUser);
     const openProjects = useQuery(api.projects.listOpen) ?? [];
-    const opportunities = useQuery(api.opportunities.byCurrentFreelancer) ?? [];
+    const opportunities = useQuery(
+        api.opportunities.byCurrentFreelancer,
+        me?.role === "freelancer" ? {} : "skip"
+    ) ?? [];
 
     return (
         <div className="space-y-4">
