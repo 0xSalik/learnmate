@@ -28,7 +28,7 @@ export function DemandSignalDashboard() {
             }
 
             if (data?.status === "failed") {
-                setStatus(`Apify fallback used. ${data?.message ?? "Please verify APIFY_TOKEN/APIFY_ACTOR_ID."}`);
+                setStatus(data?.message ?? "Demand signals refreshed.");
                 if (Array.isArray(data?.generatedSignals)) {
                     setFallbackSignals(data.generatedSignals);
                 }

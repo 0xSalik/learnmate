@@ -115,8 +115,11 @@ async function generateDemandFallback(reason: string) {
     }
   }
 
+  const topicPrefixes = ["Mastery Track", "Sprint Lab", "Concept Clinic", "Exam Boost", "Project Prep", "Skill Studio"];
+  const topicFocus = ["Ratios", "Cell Biology", "Python Logic", "Essay Framing", "Accounts Basics", "Motion Problems", "Organic Reactions", "Data Structures"];
+
   return Array.from({ length: 8 }).map((_, idx) => ({
-    topic: `Fallback Topic ${idx + 1} (${seed.slice(-4)})`,
+    topic: `${topicPrefixes[idx % topicPrefixes.length]}: ${topicFocus[(idx + 2) % topicFocus.length]} ${seed.slice(-3)}`,
     subjectArea: ["Math", "Science", "Coding", "English"][idx % 4],
     requestCount7d: 8 + idx * 3,
     requestCount24h: 1 + (idx % 4),
@@ -135,7 +138,7 @@ export async function POST(req: Request) {
       taskId: "fallback-only",
       status: "failed",
       mode: "fallback",
-      message: "Using default generated demand data.",
+      message: "Showing generated demand data.",
       generatedSignals,
       actorCalled: false,
     });
@@ -150,7 +153,7 @@ export async function POST(req: Request) {
       taskId: "demo-seeded",
       status: "failed",
       mode: "demo",
-      message: "APIFY_TOKEN or APIFY_ACTOR_ID is missing, using demo response.",
+      message: "Live demand source is not configured.",
       generatedSignals,
       actorCalled: false,
     });

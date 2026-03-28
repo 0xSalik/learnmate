@@ -118,7 +118,7 @@ Expected technical result:
 2. Switch between Parent, Student, Freelancer modes.
 3. App calls role mutation in [convex/users.ts](convex/users.ts) and routes through [app/auth/continue/page.tsx](app/auth/continue/page.tsx).
 4. Destination is computed by profile completeness via `getPostAuthDestination` in [convex/users.ts](convex/users.ts):
-	- incomplete profile -> corresponding onboarding form
+	- incomplete profile -> corresponding onboarding formz
 	- complete profile -> corresponding dashboard
 
 This allows judges to validate all three personas using one account.

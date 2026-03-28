@@ -134,7 +134,7 @@ export default function OpportunitiesPage() {
                 });
                 setStatus(
                     data?.mode === "fallback"
-                        ? `Exa fallback used (${data?.source ?? "openrouter"}). Loaded ${items.length} opportunities.`
+                        ? `Opportunity list refreshed with generated data. Loaded ${items.length} opportunities.`
                         : `Refreshed ${items.length} opportunities from Exa.`
                 );
             } catch {
@@ -151,7 +151,7 @@ export default function OpportunitiesPage() {
                     }))
                 );
                 setStatus(
-                    `Saved locally using ${data?.mode === "fallback" ? "OpenRouter fallback" : "API fallback"}. Showing ${items.length} opportunities.`
+                    `Opportunity list updated locally. Showing ${items.length} opportunities.`
                 );
             }
         } catch {

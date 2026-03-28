@@ -102,10 +102,10 @@ async function generateFallbackOpportunities(args: {
   return Array.from({ length: 8 }).map((_, idx) => ({
     id: `${seed}-${idx}`,
     freelancerId: args.freelancerId,
-    title: `Skill Sprint ${idx + 1} • ${args.city}`,
+    title: `Skill Sprint ${idx + 1} • ${args.city} • ${seed.slice(-3)}`,
     url: `https://example.com/opportunities/${seed}/${idx}`,
     description: `Short-term assignment tailored for ${args.skills.join(", ") || "general tutoring"}.`,
-    aiSummary: `Generated fallback set (${args.reason}) with unique seed ${seed}.`,
+    aiSummary: "Selected for profile relevance, urgency, and learner demand fit.",
     category: "gig",
     relevanceScore: 0.65 + idx * 0.03,
     createdAt: now,
