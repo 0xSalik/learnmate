@@ -15,15 +15,19 @@ const getAuthedUser = async (ctx: any) => {
 };
 
 const getAuthedUserOrNull = async (ctx: any) => {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
+  try {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
 
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))
-    .first();
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))
+      .first();
 
-  return user ?? null;
+    return user ?? null;
+  } catch {
+    return null;
+  }
 };
 
 export const byFreelancer = query({
@@ -40,15 +44,19 @@ export const byFreelancer = query({
 export const byCurrentFreelancer = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getAuthedUserOrNull(ctx);
-    if (!user) return [];
-    if (user.role !== "freelancer") return [];
+    try {
+      const user = await getAuthedUserOrNull(ctx);
+      if (!user) return [];
+      if (user.role !== "freelancer") return [];
 
-    return await ctx.db
-      .query("opportunities")
-      .withIndex("by_freelancer", (q) => q.eq("freelancerId", user._id))
-      .order("desc")
-      .take(30);
+      return await ctx.db
+        .query("opportunities")
+        .withIndex("by_freelancer", (q) => q.eq("freelancerId", user._id))
+        .order("desc")
+        .take(30);
+    } catch {
+      return [];
+    }
   },
 });
 
