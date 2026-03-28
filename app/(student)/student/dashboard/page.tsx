@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { api } from "@/convex/_generated/api";
-import { projects } from "@/lib/mock-data";
 
 export default function StudentDashboardPage() {
     const profile = useQuery(api.learningDNA.byCurrentStudent);
+    const openProjects = useQuery(api.projects.listOpen) ?? [];
     const updateDNA = useMutation(api.learningDNA.updateCurrentStudentDNA);
 
     const [attentionSpan, setAttentionSpan] = useState<"short" | "medium" | "long">("medium");
@@ -150,11 +150,9 @@ export default function StudentDashboardPage() {
             </section>
 
             <div className="grid gap-4 md:grid-cols-2">
-                {projects
-                    .filter((p) => p.requesterType === "university_student" || p.requesterType === "school_student")
-                    .map((project) => (
-                        <ProjectCard key={project.id} project={project} proposalCount={0} />
-                    ))}
+                {openProjects.slice(0, 6).map((project) => (
+                    <ProjectCard key={project._id} project={project} proposalCount={0} />
+                ))}
             </div>
         </div>
     );

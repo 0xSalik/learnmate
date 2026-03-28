@@ -1,13 +1,15 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { LiveProposalFeed } from "@/components/project/LiveProposalFeed";
 import { deadlineLabel, formatInr } from "@/lib/utils";
 
-export default function ParentProjectPage({ params }: { params: { id: string } }) {
+export default function ParentProjectPage() {
+    const params = useParams<{ id: string }>();
     const projectId = params.id as Id<"projects">;
     const project = useQuery(api.projects.byId, { id: projectId });
     const currentUser = useQuery(api.users.getCurrentUser);

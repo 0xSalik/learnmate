@@ -25,6 +25,31 @@ export const listForCurrentUser = query({
   },
 });
 
+export const listWithDnaForCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await requireIdentity(ctx);
+    const user = await getCurrentUser(ctx, identity.subject);
+    if (!user) return [];
+
+    const children = await ctx.db
+      .query("children")
+      .withIndex("by_parent", (q) => q.eq("parentId", user._id))
+      .collect();
+
+    const result = [];
+    for (const child of children) {
+      const dna = await ctx.db
+        .query("learningDNA")
+        .withIndex("by_child", (q) => q.eq("childId", child._id))
+        .first();
+      result.push({ child, dna });
+    }
+
+    return result;
+  },
+});
+
 export const byIdForCurrentUser = query({
   args: { childId: v.id("children") },
   handler: async (ctx, { childId }) => {
