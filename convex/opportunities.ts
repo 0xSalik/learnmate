@@ -14,6 +14,18 @@ const getAuthedUser = async (ctx: any) => {
   return user;
 };
 
+const getAuthedUserOrNull = async (ctx: any) => {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))
+    .first();
+
+  return user ?? null;
+};
+
 export const byFreelancer = query({
   args: { freelancerId: v.id("users") },
   handler: async (ctx, { freelancerId }) => {
@@ -28,7 +40,8 @@ export const byFreelancer = query({
 export const byCurrentFreelancer = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getAuthedUser(ctx);
+    const user = await getAuthedUserOrNull(ctx);
+    if (!user) return [];
     if (user.role !== "freelancer") return [];
 
     return await ctx.db
