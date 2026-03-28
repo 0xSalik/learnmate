@@ -15,6 +15,16 @@ export function DemandSignalDashboard() {
             setStatus(null);
             const res = await fetch("/api/apify/trigger", { method: "POST" });
             const data = await res.json();
+            if (!res.ok) {
+                setStatus(data?.message ?? "Could not trigger Apify right now.");
+                return;
+            }
+
+            if (data?.status === "failed") {
+                setStatus(`Apify fallback used. ${data?.message ?? "Please verify APIFY_TOKEN/APIFY_ACTOR_ID."}`);
+                return;
+            }
+
             setStatus(`Apify triggered. Task: ${data.taskId ?? "unknown"}`);
         } catch {
             setStatus("Could not trigger Apify right now.");
