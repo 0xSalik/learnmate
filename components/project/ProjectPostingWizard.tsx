@@ -27,6 +27,8 @@ export function ProjectPostingWizard() {
     const [budget, setBudget] = useState(400);
     const [serviceMode, setServiceMode] = useState<(typeof modes)[number]["key"]>("guided_session");
     const [aiData, setAiData] = useState<{ title: string; subject: string; grade: string; confidence: number } | null>(null);
+    const [priceSuggestion, setPriceSuggestion] = useState<{ min: number; max: number; reasoning: string } | null>(null);
+    const [isGettingPrice, setIsGettingPrice] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
     const [postError, setPostError] = useState<string | null>(null);
 
@@ -43,6 +45,35 @@ export function ProjectPostingWizard() {
         setTitle(data.title ?? "");
         setSubject(data.subject ?? "Science");
         if (data.grade) setGrade(String(data.grade));
+    }
+
+    async function suggestPriceWithAi() {
+        try {
+            setIsGettingPrice(true);
+            const res = await fetch("/api/ai/suggest-price", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    title,
+                    subject,
+                    city,
+                    serviceMode,
+                    complexity: aiData?.confidence && aiData.confidence > 0.85 ? "high" : "medium",
+                    estimatedHours: serviceMode === "full_build" ? 5 : serviceMode === "accompanied_build" ? 4 : 3,
+                }),
+            });
+            const data = await res.json();
+            const min = Number(data.min ?? 300);
+            const max = Number(data.max ?? min + 300);
+            setPriceSuggestion({
+                min,
+                max,
+                reasoning: data.reasoning ?? "AI-assisted estimate",
+            });
+            setBudget(Math.round((min + max) / 2));
+        } finally {
+            setIsGettingPrice(false);
+        }
     }
 
     async function postProject() {
@@ -169,6 +200,16 @@ export function ProjectPostingWizard() {
             {step === 3 && (
                 <div className="space-y-3">
                     <label className="text-sm text-text-secondary">Budget: {formatInr(budget)}</label>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            void suggestPriceWithAi();
+                        }}
+                        disabled={isGettingPrice}
+                        className="rounded-lg border border-border-subtle px-3 py-1.5 text-sm text-text-primary disabled:opacity-60"
+                    >
+                        {isGettingPrice ? "Thinking..." : "Suggest Price with AI"}
+                    </button>
                     <input
                         value={budget}
                         min={200}
@@ -179,6 +220,11 @@ export function ProjectPostingWizard() {
                         className="w-full"
                     />
                     <p className="rounded-xl bg-surface-warm p-3 text-sm text-text-secondary">{priceHint}</p>
+                    {priceSuggestion ? (
+                        <p className="rounded-xl border border-border-subtle bg-white p-3 text-sm text-text-secondary">
+                            AI suggests {formatInr(priceSuggestion.min)} – {formatInr(priceSuggestion.max)}. {priceSuggestion.reasoning}
+                        </p>
+                    ) : null}
                 </div>
             )}
 
