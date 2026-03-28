@@ -25,11 +25,103 @@ LearnMate combines:
 - AI-assisted class/session tooling.
 - Post-session reporting and proof-of-learning support.
 
-### Key User Journeys
+### Detailed User Flows (Judge-Friendly Walkthrough)
 
-- Parent creates account, selects role, completes onboarding, posts project, tracks proposals and child learning profile.
-- Student creates account, selects role, completes onboarding, updates personal learning DNA, posts requests.
-- Freelancer creates account, selects role, completes onboarding, publishes sessions and responds to demand signals.
+This section is written as a click-by-click script so reviewers can test the platform quickly without guessing hidden steps.
+
+---
+
+#### A) Parent Flow (Project Posting + Child Learning Tracking)
+
+1. Open app home at [/](app/page.tsx).
+2. Click **Create account** and sign up through Clerk at [app/(auth)/sign-up/[[...sign-up]]/page.tsx](app/(auth)/sign-up/[[...sign-up]]/page.tsx).
+3. After auth, user lands on role selection at [app/onboarding/role/page.tsx](app/onboarding/role/page.tsx).
+4. Select **Parent**.
+5. Complete parent onboarding form at [app/onboarding/parent/page.tsx](app/onboarding/parent/page.tsx):
+	- parent name/city
+	- child name/grade
+	- preferred help types and session mode
+6. System writes user + child profile through Convex mutation in [convex/users.ts](convex/users.ts).
+7. User is routed to parent dashboard at [app/(parent)/parent/dashboard/page.tsx](app/(parent)/parent/dashboard/page.tsx).
+8. Click **Post Project** entry and open [app/(parent)/post-project/page.tsx](app/(parent)/post-project/page.tsx).
+9. In wizard [components/project/ProjectPostingWizard.tsx](components/project/ProjectPostingWizard.tsx):
+	- upload brief media/file or paste text
+	- run brief extraction from [app/api/ai/extract-brief/route.ts](app/api/ai/extract-brief/route.ts)
+	- run budget suggestion from [app/api/ai/suggest-price/route.ts](app/api/ai/suggest-price/route.ts)
+	- submit project to Convex via [convex/projects.ts](convex/projects.ts)
+10. Parent can later review project state/proposals and child DNA insight panels on dashboard.
+
+Expected technical result:
+- user doc exists
+- child doc exists
+- learning DNA linked or initialized
+- project doc created with requester linkage
+
+---
+
+#### B) Student Flow (Self-Serve Learning Request + DNA Preferences)
+
+1. Sign up/sign in via Clerk routes.
+2. Land on role selector [app/onboarding/role/page.tsx](app/onboarding/role/page.tsx).
+3. Select **Student**.
+4. Complete student onboarding at [app/onboarding/student/page.tsx](app/onboarding/student/page.tsx):
+	- education stage (middle/high/university)
+	- school/university
+	- grade/year
+5. System persists student profile using [convex/users.ts](convex/users.ts).
+6. Student enters dashboard at [app/(student)/student/dashboard/page.tsx](app/(student)/student/dashboard/page.tsx).
+7. Student updates learning preferences (attention style, confusion triggers, strengths) using mutations in [convex/learningDNA.ts](convex/learningDNA.ts).
+8. Student can post rapid support requests using crash-course flow at [app/(student)/post-crash-course/page.tsx](app/(student)/post-crash-course/page.tsx) and form logic in [components/project/CrashCoursePostingForm.tsx](components/project/CrashCoursePostingForm.tsx).
+
+Expected technical result:
+- student role fully initialized
+- child + DNA document path created for student profile
+- updates reflected in Convex and visible on reload
+
+---
+
+#### C) Freelancer Flow (Opportunity Discovery + Session Delivery)
+
+1. Sign up/sign in.
+2. Select **Freelancer** on role page.
+3. Complete onboarding at [app/onboarding/freelancer/page.tsx](app/onboarding/freelancer/page.tsx):
+	- skills
+	- bio
+	- hourly rate
+4. User lands on freelancer dashboard [app/(freelancer)/freelancer/dashboard/page.tsx](app/(freelancer)/freelancer/dashboard/page.tsx).
+5. Open **Opportunity Hub** [app/(freelancer)/opportunities/page.tsx](app/(freelancer)/opportunities/page.tsx) and click **Refresh from Exa**.
+6. Exa route [app/api/exa/opportunities/route.ts](app/api/exa/opportunities/route.ts):
+	- attempts live Exa query
+	- on timeout/failure/empty result, generates unique fallback opportunities via OpenRouter
+	- returns normalized records for UI + persistence
+7. Opportunities are upserted in Convex through [convex/opportunities.ts](convex/opportunities.ts).
+8. Open **Demand Signals** [app/(freelancer)/demand/page.tsx](app/(freelancer)/demand/page.tsx) and click **Run Apify Benchmarks**.
+9. Apify route [app/api/apify/trigger/route.ts](app/api/apify/trigger/route.ts):
+	- attempts actor run with timeout guard
+	- retries with latest successful build if needed
+	- on failure, returns unique OpenRouter-generated fallback demand signals
+10. Open a session page [app/(freelancer)/session/[sessionId]/page.tsx](app/(freelancer)/session/[sessionId]/page.tsx):
+	 - start/complete session state transitions
+	 - use live copilot sidebar from [components/freelancer/SessionCoPilotSidebar.tsx](components/freelancer/SessionCoPilotSidebar.tsx)
+
+Expected technical result:
+- freelancer profile completed
+- opportunity data available even if external APIs fail
+- demand signal cards render live or fallback data
+- session state transitions persist
+
+---
+
+#### D) Role Switching (Single Account, Multiple Modes)
+
+1. After login, open top navbar selector in [components/shared/Navbar.tsx](components/shared/Navbar.tsx).
+2. Switch between Parent, Student, Freelancer modes.
+3. App calls role mutation in [convex/users.ts](convex/users.ts) and routes through [app/auth/continue/page.tsx](app/auth/continue/page.tsx).
+4. Destination is computed by profile completeness via `getPostAuthDestination` in [convex/users.ts](convex/users.ts):
+	- incomplete profile -> corresponding onboarding form
+	- complete profile -> corresponding dashboard
+
+This allows judges to validate all three personas using one account.
 
 ## 2) Technical Architecture
 
@@ -109,7 +201,7 @@ The AI layer is implemented using OpenAI SDK compatibility mode pointed at OpenR
 
 Default model:
 
-- `meta-llama/llama-3.3-70b-instruct:free` (configurable via env)
+- `openai/gpt-4o-mini` (configurable via env)
 
 ### Exa
 

@@ -8,6 +8,16 @@ import { OpportunityFeedCard } from "@/components/freelancer/OpportunityFeedCard
 export default function OpportunitiesPage() {
     const [status, setStatus] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [fallbackItems, setFallbackItems] = useState<Array<{
+        id: string;
+        freelancerId: string;
+        title: string;
+        url: string;
+        category: "gig" | "internship" | "hackathon" | "scholarship" | "competition" | "volunteer";
+        aiSummary: string;
+        deadline?: string;
+        prize?: string;
+    }>>([]);
 
     const me = useQuery(api.users.getCurrentUser);
     const opportunities = useQuery(
@@ -39,6 +49,7 @@ export default function OpportunitiesPage() {
         try {
             setRefreshing(true);
             setStatus(null);
+            setFallbackItems([]);
             const res = await fetch("/api/exa/opportunities", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -50,7 +61,17 @@ export default function OpportunitiesPage() {
             });
             const data = await res.json();
 
-            const items = (data.results ?? [])
+            const items: Array<{
+                title: string;
+                url: string;
+                description: string;
+                aiSummary: string;
+                category: "gig" | "internship" | "hackathon" | "scholarship" | "competition" | "volunteer";
+                deadline?: string;
+                prize?: string;
+                relevanceScore: number;
+                expiresAt: number;
+            }> = (data.results ?? [])
                 .map((item: any, idx: number) => ({
                     title: asOptionalString(item.title) ?? `Opportunity ${idx + 1}`,
                     url: asOptionalString(item.url) ?? `https://example.com/opportunity/${Date.now()}-${idx}`,
@@ -66,17 +87,51 @@ export default function OpportunitiesPage() {
                 }))
                 .slice(0, 20);
 
-            await upsertForCurrentFreelancer({
-                items,
-            });
-
-            setStatus(`Refreshed ${items.length} opportunities from Exa.`);
+            try {
+                await upsertForCurrentFreelancer({
+                    items,
+                });
+                setStatus(
+                    data?.mode === "fallback"
+                        ? `Exa fallback used (${data?.source ?? "openrouter"}). Loaded ${items.length} opportunities.`
+                        : `Refreshed ${items.length} opportunities from Exa.`
+                );
+            } catch {
+                setFallbackItems(
+                    items.map((item: typeof items[number], idx: number) => ({
+                        id: `fallback-${Date.now()}-${idx}`,
+                        freelancerId: String(me._id),
+                        title: item.title,
+                        url: item.url,
+                        category: item.category,
+                        aiSummary: item.aiSummary,
+                        deadline: item.deadline,
+                        prize: item.prize,
+                    }))
+                );
+                setStatus(
+                    `Saved locally using ${data?.mode === "fallback" ? "OpenRouter fallback" : "API fallback"}. Showing ${items.length} opportunities.`
+                );
+            }
         } catch {
             setStatus("Could not refresh opportunities right now.");
         } finally {
             setRefreshing(false);
         }
     };
+
+    const displayOpportunities = opportunities.length
+        ? opportunities.map((opportunity) => ({
+            id: String(opportunity._id),
+            freelancerId: String(opportunity.freelancerId),
+            title: opportunity.title,
+            url: opportunity.url,
+            category: opportunity.category,
+            aiSummary: opportunity.aiSummary,
+            deadline: opportunity.deadline,
+            prize: opportunity.prize,
+        }))
+        : fallbackItems;
 
     return (
         <div className="space-y-4">
@@ -96,12 +151,12 @@ export default function OpportunitiesPage() {
             <p className="text-sm text-text-secondary">AI-ranked opportunities fetched from Exa.</p>
             {status ? <p className="text-sm text-text-secondary">{status}</p> : null}
             <div className="grid gap-4 md:grid-cols-2">
-                {opportunities.map((opportunity) => (
+                {displayOpportunities.map((opportunity) => (
                     <OpportunityFeedCard
-                        key={opportunity._id}
+                        key={opportunity.id}
                         opportunity={{
-                            id: String(opportunity._id),
-                            freelancerId: String(opportunity.freelancerId),
+                            id: opportunity.id,
+                            freelancerId: opportunity.freelancerId,
                             title: opportunity.title,
                             url: opportunity.url,
                             category: opportunity.category,

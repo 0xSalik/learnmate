@@ -7,21 +7,30 @@ import { api } from "@/convex/_generated/api";
 export function DemandSignalDashboard() {
     const [status, setStatus] = useState<string | null>(null);
     const [triggering, setTriggering] = useState(false);
+    const [fallbackSignals, setFallbackSignals] = useState<any[]>([]);
     const demandSignals = useQuery(api.demandSignals.topByRequestCount, { limit: 12 }) ?? [];
+    const displaySignals = fallbackSignals.length ? fallbackSignals : demandSignals;
 
     const triggerApify = async () => {
         try {
             setTriggering(true);
             setStatus(null);
+            setFallbackSignals([]);
             const res = await fetch("/api/apify/trigger", { method: "POST" });
             const data = await res.json();
             if (!res.ok) {
                 setStatus(data?.message ?? "Could not trigger Apify right now.");
+                if (Array.isArray(data?.generatedSignals)) {
+                    setFallbackSignals(data.generatedSignals);
+                }
                 return;
             }
 
             if (data?.status === "failed") {
                 setStatus(`Apify fallback used. ${data?.message ?? "Please verify APIFY_TOKEN/APIFY_ACTOR_ID."}`);
+                if (Array.isArray(data?.generatedSignals)) {
+                    setFallbackSignals(data.generatedSignals);
+                }
                 return;
             }
 
@@ -50,7 +59,7 @@ export function DemandSignalDashboard() {
             </div>
             {status ? <p className="text-sm text-text-secondary">{status}</p> : null}
             <div className="grid gap-3 md:grid-cols-3">
-                {demandSignals.slice(0, 8).map((item) => (
+                {displaySignals.slice(0, 8).map((item) => (
                     <article
                         key={item.topic}
                         className={`rounded-2xl border p-4 ${item.trendDirection === "rising"

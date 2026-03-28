@@ -1,18 +1,89 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { OpportunityFeedCard } from "@/components/freelancer/OpportunityFeedCard";
 import { ProjectCard } from "@/components/project/ProjectCard";
 
 export default function FreelancerDashboardPage() {
+    const [fallbackOpportunities, setFallbackOpportunities] = useState<Array<{
+        id: string;
+        freelancerId: string;
+        title: string;
+        url: string;
+        category: "gig" | "internship" | "hackathon" | "scholarship" | "competition" | "volunteer";
+        aiSummary: string;
+        deadline?: string;
+        prize?: string;
+    }>>([]);
+
     const me = useQuery(api.users.getCurrentUser);
     const openProjects = useQuery(api.projects.listOpen) ?? [];
     const opportunities = useQuery(
         api.opportunities.byFreelancer,
         me?.role === "freelancer" ? { freelancerId: me._id } : "skip"
     ) ?? [];
+
+    useEffect(() => {
+        if (!me || me.role !== "freelancer") return;
+        if (opportunities.length > 0) {
+            setFallbackOpportunities([]);
+            return;
+        }
+
+        let cancelled = false;
+        void (async () => {
+            const res = await fetch("/api/exa/opportunities", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    freelancerId: String(me._id),
+                    skills: me.skills ?? [],
+                    city: me.city ?? "India",
+                }),
+            }).catch(() => null);
+
+            if (!res) return;
+            const data = await res.json().catch(() => ({}));
+            const items = Array.isArray(data?.results)
+                ? data.results.slice(0, 6).map((item: any, idx: number) => ({
+                    id: String(item?.id ?? `fallback-${idx}`),
+                    freelancerId: String(me._id),
+                    title: String(item?.title ?? `Opportunity ${idx + 1}`),
+                    url: String(item?.url ?? `https://example.com/opportunity/${idx}`),
+                    category: ["gig", "internship", "hackathon", "scholarship", "competition", "volunteer"].includes(String(item?.category))
+                        ? String(item.category) as "gig" | "internship" | "hackathon" | "scholarship" | "competition" | "volunteer"
+                        : "gig",
+                    aiSummary: String(item?.aiSummary ?? "Generated fallback opportunity."),
+                    deadline: item?.deadline ? String(item.deadline) : undefined,
+                    prize: item?.prize ? String(item.prize) : undefined,
+                }))
+                : [];
+
+            if (!cancelled) {
+                setFallbackOpportunities(items);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [me, opportunities.length]);
+
+    const displayedOpportunities = opportunities.length
+        ? opportunities.map((opportunity) => ({
+            id: String(opportunity._id),
+            freelancerId: String(opportunity.freelancerId),
+            title: opportunity.title,
+            url: opportunity.url,
+            category: opportunity.category,
+            aiSummary: opportunity.aiSummary,
+            deadline: opportunity.deadline,
+            prize: opportunity.prize,
+        }))
+        : fallbackOpportunities;
 
     return (
         <div className="space-y-4">
@@ -50,12 +121,12 @@ export default function FreelancerDashboardPage() {
                 </section>
                 <aside className="space-y-3">
                     <h2 className="text-xl font-semibold text-text-primary">Opportunity Hub</h2>
-                    {opportunities.map((opportunity) => (
+                    {displayedOpportunities.map((opportunity) => (
                         <OpportunityFeedCard
-                            key={opportunity._id}
+                            key={opportunity.id}
                             opportunity={{
-                                id: String(opportunity._id),
-                                freelancerId: String(opportunity.freelancerId),
+                                id: opportunity.id,
+                                freelancerId: opportunity.freelancerId,
                                 title: opportunity.title,
                                 url: opportunity.url,
                                 category: opportunity.category,
