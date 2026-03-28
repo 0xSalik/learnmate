@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { hasOpenAI, openai, openrouterModel } from "@/lib/openai";
 
+export const runtime = "nodejs";
+
 type OutlineRow = {
   segment: string;
   durationMinutes: number;
@@ -63,6 +65,21 @@ function normalizeOutline(input: any, totalMinutes: number): OutlineRow[] {
   return clamped.slice(0, 8);
 }
 
+function buildFallbackPayload(args: {
+  topic: string;
+  safeDuration: number;
+  safePrice: number;
+}) {
+  const safeTopic = args.topic || "Core Concept";
+  return {
+    suggestedTitle: `${safeTopic} — From Confused to Confident`,
+    description: `After this session, you will explain ${safeTopic} clearly and solve common problems without guesswork.`,
+    whyItMatters: "This topic appears repeatedly in assessments and interviews.",
+    suggestedPricePerSeat: args.safePrice,
+    outline: normalizeOutline([], args.safeDuration),
+  };
+}
+
 export async function POST(req: Request) {
   const {
     topic = "",
@@ -78,39 +95,38 @@ export async function POST(req: Request) {
   const safePrice = Number.isFinite(Number(benchmarkPrice)) ? Number(benchmarkPrice) : 299;
 
   if (!hasOpenAI) {
-    return NextResponse.json({
-      suggestedTitle: `${topic} — From Confused to Confident`,
-      description: `After this session, you will explain ${topic} clearly and solve common problems without guesswork.`,
-      whyItMatters: `This topic appears repeatedly in assessments and interviews.`,
-      suggestedPricePerSeat: safePrice,
-      outline: normalizeOutline([], safeDuration),
-    });
+    return NextResponse.json(buildFallbackPayload({ topic, safeDuration, safePrice }));
   }
 
-  const res = await openai.chat.completions.create({
-    model: openrouterModel,
-    temperature: 0.2,
-    messages: [
-      {
-        role: "system",
-        content:
-          "Return JSON only with keys: outline, description, whyItMatters, suggestedPricePerSeat, suggestedTitle. Use outcome-first language. Outline must be an array of objects: segment, durationMinutes, whatYouWillUnderstand.",
-      },
-      {
-        role: "user",
-        content: JSON.stringify({ topic, subjectArea, depth, durationMinutes: safeDuration, benchmarkPrice: safePrice, maxSeats, isRemote }),
-      },
-    ],
-  });
+  try {
+    const res = await openai.chat.completions.create({
+      model: openrouterModel,
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Return JSON only with keys: outline, description, whyItMatters, suggestedPricePerSeat, suggestedTitle. Use outcome-first language. Outline must be an array of objects: segment, durationMinutes, whatYouWillUnderstand.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({ topic, subjectArea, depth, durationMinutes: safeDuration, benchmarkPrice: safePrice, maxSeats, isRemote }),
+        },
+      ],
+    });
 
-  const parsed = safeParseJson(res.choices?.[0]?.message?.content ?? "");
-  return NextResponse.json({
-    suggestedTitle: String(parsed?.suggestedTitle ?? `${topic} Masterclass`).trim(),
-    description: String(parsed?.description ?? `After this session, you will understand ${topic}.`).trim(),
-    whyItMatters: String(parsed?.whyItMatters ?? "High-frequency concept").trim(),
-    suggestedPricePerSeat: Number.isFinite(Number(parsed?.suggestedPricePerSeat))
-      ? Number(parsed.suggestedPricePerSeat)
-      : safePrice,
-    outline: normalizeOutline(parsed?.outline, safeDuration),
-  });
+    const parsed = safeParseJson(res.choices?.[0]?.message?.content ?? "");
+    return NextResponse.json({
+      suggestedTitle: String(parsed?.suggestedTitle ?? `${topic || "Session"} Masterclass`).trim(),
+      description: String(parsed?.description ?? `After this session, you will understand ${topic || "the topic"}.`).trim(),
+      whyItMatters: String(parsed?.whyItMatters ?? "High-frequency concept").trim(),
+      suggestedPricePerSeat: Number.isFinite(Number(parsed?.suggestedPricePerSeat))
+        ? Number(parsed.suggestedPricePerSeat)
+        : safePrice,
+      outline: normalizeOutline(parsed?.outline, safeDuration),
+    });
+  } catch (error) {
+    console.error("compose-group-session OpenRouter error", error);
+    return NextResponse.json(buildFallbackPayload({ topic, safeDuration, safePrice }));
+  }
 }
