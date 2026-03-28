@@ -3,7 +3,7 @@ import OpenAI from "openai";
 let openaiInstance: OpenAI | null = null;
 
 export const hasOpenAI = !!process.env.OPENROUTER_API_KEY;
-export const openrouterModel = process.env.OPENROUTER_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
+export const openrouterModel = process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini";
 
 export const getOpenai = (): OpenAI | null => {
   if (process.env.OPENROUTER_API_KEY) {

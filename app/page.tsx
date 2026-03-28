@@ -13,6 +13,11 @@ export default function Home() {
   useEffect(() => {
     if (!currentUser) return;
 
+    if (currentUser.role === "school_student" && !currentUser.educationStage && currentUser.course !== "__role_selected__") {
+      router.replace("/onboarding/role");
+      return;
+    }
+
     if (currentUser.role === "parent") {
       router.replace("/parent/dashboard");
       return;

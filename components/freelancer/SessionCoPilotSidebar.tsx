@@ -5,24 +5,37 @@ import { useState } from "react";
 export function SessionCoPilotSidebar() {
     const [input, setInput] = useState("");
     const [history, setHistory] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     async function submit() {
-        const res = await fetch("/api/ai/copilot-stream", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-                sessionId: "demo",
-                transcriptChunks: [input],
-                childDNA: null,
-            }),
-        });
-        const raw = await res.text();
-        const text = raw
-            .replace(/^data:\s*/gm, "")
-            .replace(/\n\n/g, "\n")
-            .trim();
-        setHistory((prev) => [text || "Check understanding before moving forward.", ...prev].slice(0, 5));
-        setInput("");
+        if (!input.trim()) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            const res = await fetch("/api/ai/copilot-stream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    sessionId: "demo",
+                    transcriptChunks: [input],
+                    childDNA: null,
+                }),
+            });
+            const raw = await res.text();
+            const text = raw
+                .replace(/^data:\s*/gm, "")
+                .replace(/\n\n/g, "\n")
+                .trim();
+            setHistory((prev) => [text || "Check understanding before moving forward.", ...prev].slice(0, 5));
+            setInput("");
+        } catch {
+            setError("Could not fetch AI suggestion right now.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -40,10 +53,12 @@ export function SessionCoPilotSidebar() {
             <button
                 type="button"
                 onClick={submit}
-                className="mt-2 w-full rounded-xl bg-brand-primary px-3 py-2 text-sm font-medium text-white"
+                disabled={loading || !input.trim()}
+                className="mt-2 w-full rounded-xl bg-brand-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-                Get whisper suggestion
+                {loading ? "Thinking..." : "Get whisper suggestion"}
             </button>
+            {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
             <div className="mt-3 space-y-2">
                 {history.map((item, index) => (
                     <p key={index} className="rounded-lg bg-surface-warm p-2 text-sm text-text-secondary">

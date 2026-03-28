@@ -1,6 +1,8 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+const STUDENT_ROLE_SELECTED_MARKER = "__role_selected__";
+
 const getAuthedUser = async (ctx: any) => {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
@@ -61,7 +63,11 @@ export const getPostAuthDestination = query({
     // New auth records are initially created with a default role. Until the
     // user explicitly selects their role on onboarding, keep routing to role
     // selection instead of assuming student onboarding.
-    if (user.role === "school_student" && !user.educationStage) {
+    if (
+      user.role === "school_student" &&
+      !user.educationStage &&
+      user.course !== STUDENT_ROLE_SELECTED_MARKER
+    ) {
       return "/onboarding/role";
     }
 
@@ -148,12 +154,17 @@ export const setCurrentUserRole = mutation({
         email: identity.email ?? `${identity.subject}@clerk.local`,
         name: identity.name ?? "Learner",
         role,
+        ...(role === "school_student" ? { course: STUDENT_ROLE_SELECTED_MARKER } : {}),
         createdAt: Date.now(),
       });
       return userId;
     }
 
-    await ctx.db.patch(user._id, { role });
+    const patch: Record<string, unknown> = { role };
+    if (role === "school_student") {
+      patch.course = STUDENT_ROLE_SELECTED_MARKER;
+    }
+    await ctx.db.patch(user._id, patch);
     return user._id;
   },
 });

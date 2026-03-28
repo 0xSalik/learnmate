@@ -26,7 +26,19 @@ export function ProjectPostingWizard() {
     const [isRemote, setIsRemote] = useState(true);
     const [budget, setBudget] = useState(400);
     const [serviceMode, setServiceMode] = useState<(typeof modes)[number]["key"]>("guided_session");
-    const [aiData, setAiData] = useState<{ title: string; subject: string; grade: string; confidence: number } | null>(null);
+    const [aiData, setAiData] = useState<{
+        title: string;
+        subject: string;
+        grade: string;
+        deadline?: string;
+        materials?: string[];
+        summary?: string;
+        confidence: number;
+    } | null>(null);
+    const [briefText, setBriefText] = useState("");
+    const [briefFile, setBriefFile] = useState<File | null>(null);
+    const [extracting, setExtracting] = useState(false);
+    const [extractError, setExtractError] = useState<string | null>(null);
     const [priceSuggestion, setPriceSuggestion] = useState<{ min: number; max: number; reasoning: string } | null>(null);
     const [isGettingPrice, setIsGettingPrice] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
@@ -39,12 +51,39 @@ export function ProjectPostingWizard() {
     }, [budget]);
 
     async function extractBrief() {
-        const res = await fetch("/api/ai/extract-brief", { method: "POST" });
-        const data = await res.json();
-        setAiData(data);
-        setTitle(data.title ?? "");
-        setSubject(data.subject ?? "Science");
-        if (data.grade) setGrade(String(data.grade));
+        try {
+            setExtracting(true);
+            setExtractError(null);
+
+            const formData = new FormData();
+            formData.set("text", briefText);
+            if (briefFile) {
+                formData.set("file", briefFile);
+            }
+
+            const res = await fetch("/api/ai/extract-brief", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await res.json();
+            setAiData(data);
+
+            setTitle(data.title ?? "");
+            setSubject(data.subject ?? "Science");
+            if (data.grade) setGrade(String(data.grade));
+            if (!description && data.summary) setDescription(String(data.summary));
+
+            if (data.deadline && typeof data.deadline === "string") {
+                const maybeDate = new Date(data.deadline);
+                if (!Number.isNaN(maybeDate.getTime())) {
+                    setDeadline(maybeDate.toISOString().slice(0, 10));
+                }
+            }
+        } catch {
+            setExtractError("Could not extract brief right now. You can still fill details manually.");
+        } finally {
+            setExtracting(false);
+        }
     }
 
     async function suggestPriceWithAi() {
@@ -115,18 +154,38 @@ export function ProjectPostingWizard() {
 
             {step === 1 && (
                 <div className="space-y-4">
-                    <button
-                        type="button"
-                        onClick={extractBrief}
-                        className="w-full rounded-2xl border border-dashed border-brand-primary bg-surface-card px-4 py-10 text-sm text-text-secondary"
-                    >
-                        Got a printed brief from school? Tap to simulate AI extraction.
-                    </button>
+                    <div className="rounded-2xl border border-border-subtle bg-surface-card p-4">
+                        <p className="text-sm text-text-secondary">Upload brief (image, PDF, TXT, DOCX, DOC) or paste text below.</p>
+                        <input
+                            type="file"
+                            accept="image/*,.pdf,.txt,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            onChange={(e) => setBriefFile(e.target.files?.[0] ?? null)}
+                            className="mt-2 w-full rounded-lg border border-border-subtle bg-white px-3 py-2 text-sm"
+                        />
+                        <textarea
+                            value={briefText}
+                            onChange={(e) => setBriefText(e.target.value)}
+                            placeholder="Paste assignment instructions or teacher notes here (optional)."
+                            className="mt-2 h-24 w-full rounded-lg border border-border-subtle bg-white px-3 py-2 text-sm"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                void extractBrief();
+                            }}
+                            disabled={extracting}
+                            className="mt-2 rounded-xl border border-dashed border-brand-primary bg-white px-4 py-2 text-sm text-text-primary disabled:opacity-60"
+                        >
+                            {extracting ? "Extracting..." : "Extract brief with AI"}
+                        </button>
+                    </div>
                     {aiData ? (
-                        <div className="rounded-xl bg-surface-warm p-3 text-sm text-text-secondary">
-                            AI extracted with {Math.round(aiData.confidence * 100)}% confidence.
+                        <div className="space-y-1 rounded-xl bg-surface-warm p-3 text-sm text-text-secondary">
+                            <p>AI extracted with {Math.round(aiData.confidence * 100)}% confidence.</p>
+                            {aiData.materials?.length ? <p>Materials: {aiData.materials.join(", ")}</p> : null}
                         </div>
                     ) : null}
+                    {extractError ? <p className="text-xs text-red-600">{extractError}</p> : null}
                 </div>
             )}
 

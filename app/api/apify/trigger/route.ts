@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { apify, hasApify } from "@/lib/apify";
+
+export const runtime = "nodejs";
 
 export async function POST() {
-  if (!hasApify || !process.env.APIFY_ACTOR_ID) {
+  const token = process.env.APIFY_TOKEN;
+  const actorId = process.env.APIFY_ACTOR_ID;
+
+  if (!token || !actorId) {
     return NextResponse.json({
       taskId: "demo-seeded",
       status: "triggered",
@@ -12,14 +16,48 @@ export async function POST() {
   }
 
   try {
-    const run = await apify.actor(process.env.APIFY_ACTOR_ID).call({
-      startUrls: [
-        { url: "https://internshala.com/gigs" },
-        { url: "https://www.fiverr.com/categories" },
-      ],
+    const query = new URLSearchParams({
+      token,
+      memory: "1024",
+      timeout: "300",
+      build: "latest",
     });
 
-    return NextResponse.json({ taskId: run.id, status: "triggered", mode: "live" });
+    const response = await fetch(`https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?${query.toString()}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        startUrls: [
+          { url: "https://internshala.com/gigs" },
+          { url: "https://www.fiverr.com/categories" },
+        ],
+      }),
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const apiMessage =
+        payload?.error?.message ??
+        payload?.message ??
+        `Apify API request failed with status ${response.status}`;
+
+      return NextResponse.json(
+        {
+          taskId: "demo-fallback",
+          status: "failed",
+          mode: "fallback",
+          message: apiMessage,
+        },
+        { status: 200 }
+      );
+    }
+
+    const runId = payload?.data?.id;
+
+    return NextResponse.json({ taskId: runId ?? "unknown", status: "triggered", mode: "live" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Apify trigger error";
     console.error("Apify trigger failed", error);

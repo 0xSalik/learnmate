@@ -2,7 +2,9 @@
 
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { api } from "@/convex/_generated/api";
 
@@ -14,7 +16,28 @@ const links = [
 ];
 
 export function Navbar() {
+    const router = useRouter();
     const currentUser = useQuery(api.users.getCurrentUser);
+    const setCurrentUserRole = useMutation(api.users.setCurrentUserRole);
+    const [switching, setSwitching] = useState(false);
+
+    const roleMode = currentUser?.role === "freelancer"
+        ? "freelancer"
+        : currentUser?.role === "parent"
+            ? "parent"
+            : "school_student";
+
+    const switchMode = async (nextRole: "parent" | "school_student" | "freelancer") => {
+        if (!currentUser || switching || roleMode === nextRole) return;
+
+        try {
+            setSwitching(true);
+            await setCurrentUserRole({ role: nextRole });
+            router.push("/auth/continue");
+        } finally {
+            setSwitching(false);
+        }
+    };
 
     return (
         <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface-warm/95 backdrop-blur">
@@ -44,7 +67,22 @@ export function Navbar() {
                             </Link>
                         </div>
                     ) : (
-                        <UserButton />
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={roleMode}
+                                disabled={switching}
+                                onChange={(e) => {
+                                    void switchMode(e.target.value as "parent" | "school_student" | "freelancer");
+                                }}
+                                className="hidden rounded-lg border border-border-subtle bg-white px-2 py-1.5 text-xs text-text-primary md:block"
+                                aria-label="Switch account mode"
+                            >
+                                <option value="parent">Parent mode</option>
+                                <option value="school_student">Student mode</option>
+                                <option value="freelancer">Freelancer mode</option>
+                            </select>
+                            <UserButton />
+                        </div>
                     )}
                     <NotificationBell />
                 </div>
