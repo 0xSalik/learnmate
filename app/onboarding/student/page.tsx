@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export default function StudentOnboardingPage() {
     const router = useRouter();
     const currentUser = useQuery(api.users.getCurrentUser);
+    const destination = useQuery(api.users.getPostAuthDestination);
     const completeStudentOnboarding = useMutation(api.users.completeStudentOnboarding);
     const [name, setName] = useState("");
     const [city, setCity] = useState("");
@@ -17,6 +18,13 @@ export default function StudentOnboardingPage() {
     const [gradeOrYear, setGradeOrYear] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!destination) return;
+        if (destination !== "/onboarding/student") {
+            router.replace(destination);
+        }
+    }, [destination, router]);
 
     const submit = async () => {
         setError(null);

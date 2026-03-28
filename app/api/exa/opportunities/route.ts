@@ -121,9 +121,19 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export async function POST(req: Request) {
-  const { freelancerId, skills = [], city = "India" } = await req.json().catch(() => ({}));
+  const { freelancerId, skills = [], city = "India", fallbackOnly = false } = await req.json().catch(() => ({}));
   const parsedSkills = Array.isArray(skills) ? skills.map((s: unknown) => String(s)) : [];
   const parsedCity = String(city || "India");
+
+  if (fallbackOnly) {
+    const results = await generateFallbackOpportunities({
+      freelancerId: freelancerId ? String(freelancerId) : undefined,
+      skills: parsedSkills,
+      city: parsedCity,
+      reason: "exa_default_fallback",
+    });
+    return NextResponse.json({ results, count: results.length, mode: "fallback", source: "openrouter" });
+  }
 
   if (!hasExa) {
     const results = await generateFallbackOpportunities({

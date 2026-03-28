@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -41,6 +42,30 @@ export function DemandSignalDashboard() {
             setTriggering(false);
         }
     };
+
+    useEffect(() => {
+        let cancelled = false;
+
+        void (async () => {
+            try {
+                const res = await fetch("/api/apify/trigger", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ fallbackOnly: true }),
+                });
+                const data = await res.json();
+                if (!cancelled && Array.isArray(data?.generatedSignals)) {
+                    setFallbackSignals(data.generatedSignals);
+                }
+            } catch {
+                // Keep Convex demand signals as silent fallback.
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     return (
         <section className="space-y-5">

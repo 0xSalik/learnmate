@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { OpportunityFeedCard } from "@/components/freelancer/OpportunityFeedCard";
@@ -39,6 +39,47 @@ export default function OpportunitiesPage() {
         const text = String(value).trim();
         return text.length ? text : undefined;
     };
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!me || me.role !== "freelancer") return;
+
+        void (async () => {
+            try {
+                const res = await fetch("/api/exa/opportunities", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        freelancerId: String(me._id),
+                        skills: me.skills ?? [],
+                        city: me.city ?? "India",
+                        fallbackOnly: true,
+                    }),
+                });
+                const data = await res.json();
+                const defaults = (data.results ?? []).map((item: any, idx: number) => ({
+                    id: asOptionalString(item.id) ?? `default-${Date.now()}-${idx}`,
+                    freelancerId: asOptionalString(item.freelancerId) ?? String(me._id),
+                    title: asOptionalString(item.title) ?? `Opportunity ${idx + 1}`,
+                    url: asOptionalString(item.url) ?? `https://example.com/opportunity/default-${idx}`,
+                    category: normalizeCategory(item.category),
+                    aiSummary: asOptionalString(item.aiSummary) ?? "Relevant opportunity.",
+                    deadline: asOptionalString(item.deadline),
+                    prize: asOptionalString(item.prize),
+                }));
+
+                if (!cancelled) {
+                    setFallbackItems(defaults);
+                }
+            } catch {
+                // Keep empty state if preload fails.
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [me]);
 
     const refreshFromExa = async () => {
         if (!me || me.role !== "freelancer") {

@@ -125,7 +125,22 @@ async function generateDemandFallback(reason: string) {
   }));
 }
 
-export async function POST() {
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const fallbackOnly = Boolean(body?.fallbackOnly);
+
+  if (fallbackOnly) {
+    const generatedSignals = await generateDemandFallback("apify_default_fallback");
+    return NextResponse.json({
+      taskId: "fallback-only",
+      status: "failed",
+      mode: "fallback",
+      message: "Using default generated demand data.",
+      generatedSignals,
+      actorCalled: false,
+    });
+  }
+
   const token = process.env.APIFY_TOKEN;
   const actorId = process.env.APIFY_ACTOR_ID;
 
